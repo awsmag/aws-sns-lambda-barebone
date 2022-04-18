@@ -8,24 +8,10 @@ Globals:
     Runtime: nodejs14.x
     MemorySize: 512
 Resources:
-  MainDLQSQS:
-    Type: AWS::SQS::Queue
+  MainSNSTopic:
+    Type: AWS::SNS::Topic
     Properties:
-      QueueName: MainsDLQ.fifo
-      ContentBasedDeduplication: true
-      FifoQueue: true
-      MessageRetentionPeriod: 864000
-  MainSQS:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: Mains.fifo
-      ContentBasedDeduplication: true
-      FifoQueue: true
-      MessageRetentionPeriod: 864000
-      VisibilityTimeout: 180
-      RedrivePolicy:
-        deadLetterTargetArn: !GetAtt MainDLQSQS.Arn
-        maxReceiveCount: 5
+      TopicName: "MainSNSTopic"
   MainFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -34,11 +20,7 @@ Resources:
       Handler: index.handleEvent
       ReservedConcurrentExecutions: 5
       Events:
-        SQSEvent:
-          Type: SQS
+        SNSEvent:
+          Type: SNS
           Properties:
-            Queue: !GetAtt MainSQS.Arn
-            BatchSize: 10
-      Policies:
-        - SQSPollerPolicy:
-            QueueName: !GetAtt MainSQS.QueueName
+            Topic: !Ref MainSNSTopic
